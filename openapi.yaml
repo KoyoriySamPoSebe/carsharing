@@ -1,0 +1,229 @@
+openapi: 3.0.3
+info:
+  title: API
+  description: This is a sample OpenAPI documentation for a basic API.
+  version: 1.0.0
+  contact:
+    name: Andrey
+    email: resident14101991@gmail.com
+
+servers:
+  #  - url: https://api.example.com/v1
+  - url: http://localhost/api
+    description: Production server
+  - url: https://staging.example.com/v1
+    description: Staging server
+
+paths:
+  /v1/rent/create:
+    post:
+      tags:
+        - rent
+      description: Start a rent
+      operationId: rentStart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RentStartRequest'
+      responses:
+        '200':
+          description: Rent created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rent'
+        '400':
+          description: Bad request
+  /v1/rent/change-status:
+    patch:
+      tags:
+        - rent
+      description: Change the status of a rent
+      operationId: rentChangeStatus
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RentChangeStatusRequest'
+      responses:
+        '200':
+          description: Rent status changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Rent'
+        '400':
+          description: Bad request
+  /v1/rent/history:
+    get:
+      tags:
+        - rent
+      description: Get rent history
+      operationId: rentHistory
+      parameters:
+        - name: driverId
+          in: query
+          description: Driver ID
+          required: true
+          schema:
+            type: integer
+        - name: status
+          in: query
+          description: Rent status
+          schema:
+            $ref: '#/components/schemas/RentStatus'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+      responses:
+        '200':
+          description: Rent history retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RentList'
+                type: object
+                required:
+                  - list
+                  - count
+                properties:
+                  list:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Rent'
+                  count:
+                    type: integer
+                    format: int32
+                    minimum: 0
+        '400':
+          description: Bad request
+
+components:
+  schemas:
+    RentStartRequest:
+      type: object
+      required:
+        - vehicleId
+        - driverId
+        - offerId
+        - locationStart
+        - context
+      properties:
+        vehicleId:
+          type: integer
+          description: Vehicle ID
+        driverId:
+          type: integer
+          description: Driver ID
+        offerId:
+          type: string
+          description: Offer ID
+        locationStart:
+          type: string
+          description: Start location
+        context:
+          type: object
+          description: Additional context
+    RentChangeStatusRequest:
+      type: object
+      required:
+        - rentId
+        - targetStatus
+      properties:
+        rentId:
+          type: integer
+          description: Rent ID
+        targetStatus:
+          $ref: '#/components/schemas/RentStatus'
+    RentList:
+      type: object
+      required:
+        - list
+        - count
+      properties:
+        list:
+          type: array
+          items:
+            $ref: '#/components/schemas/Rent'
+        count:
+          type: integer
+        page:
+          type: integer
+        offset:
+          type: integer
+        limit:
+          type: integer
+    Rent:
+      type: object
+      required:
+        - id
+        - vehicleId
+        - driverId
+        - status
+        - locationStart
+        - locationEnd
+        - costTotal
+        - createdAt
+        - updatedAt
+        - context
+        - offerId
+      properties:
+        id:
+          type: integer
+          description: Rent ID
+        vehicleId:
+          type: integer
+          description: Vehicle ID
+        driverId:
+          type: integer
+          description: Driver ID
+        status:
+          $ref: '#/components/schemas/RentStatus'
+        locationStart:
+          type: string
+          description: Start location
+        locationEnd:
+          type: string
+          description: End location
+          nullable: true
+        costTotal:
+          type: number
+          description: Total cost
+          nullable: true
+        offerId:
+          type: string
+          description: Offer ID
+        createdAt:
+          type: string
+          format: date-time
+          description: Creation date
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update date
+        context:
+          type: object
+          description: Additional context
+    RentStatus:
+      type: string
+      default: Rent status
+      enum:
+        - reserve
+        - prepare
+        - driving
+        - parking
+        - finished
+        - failed
+tags:
+  - name: rent
+    description: Operations related to rent

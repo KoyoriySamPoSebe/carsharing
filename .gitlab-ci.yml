@@ -1,0 +1,95 @@
+variables:
+  APP_ENV: testing
+  POSTGRES_DB: testing
+  POSTGRES_USER: sail
+  POSTGRES_PASSWORD: password
+  POSTGRES_HOST_AUTH_METHOD: trust
+  PGHOST: pgsql
+
+cache:
+  paths:
+    - vendor/
+    - node_modules/
+
+stages:
+  - test
+  - deploy
+
+.config:
+  image: cimg/php:8.3.8-node
+  services:
+    - name: postgis/postgis:15-3.3
+      alias: pgsql
+  before_script:
+    - npm install
+    - composer install --prefer-dist --no-ansi --no-interaction --no-progress
+    - cp .env.example .env
+    - php artisan key:generate --env=testing
+    - php artisan config:cache
+    - composer codestyle
+    - ./vendor/bin/phpstan analyse
+    - |
+      until PGPASSWORD=$POSTGRES_PASSWORD psql -h pgsql -U $POSTGRES_USER -d $POSTGRES_DB -c '\q'; do
+        echo "Postgres is unavailable - sleeping"
+        sleep 1
+      done
+    - PGPASSWORD=$POSTGRES_PASSWORD psql -h pgsql -U $POSTGRES_USER -d $POSTGRES_DB -c "CREATE EXTENSION IF NOT EXISTS postgis;"
+    - php artisan migrate:refresh --seed --env=testing
+    - npm run build
+
+check:
+  stage: test
+  extends:
+    - .config
+  script:
+    - composer test
+
+deploy:
+  stage: deploy
+  image: cimg/php:8.3.8-node
+  only:
+    - main
+  before_script:
+    - sudo apt-get update -yqq
+    - sudo apt-get install -yqq openssh-client git unzip rsync
+    - sudo apt-get install -yqq openssh-client git unzip
+    - php -v
+    - composer -V
+    - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+  script:
+    - echo "Current directory:"
+    - pwd
+    - echo "Directory contents:"
+    - ls -la
+    - echo "Git status:"
+    - git status
+    - echo "Docker compose files:"
+    - ls -la docker-compose*
+    - echo "Git tracked files:"
+    - git ls-files | grep docker-compose
+
+    - |
+      echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+      chmod 600 ~/.ssh/id_ed25519
+      eval $(ssh-agent -s)
+      ssh-add ~/.ssh/id_ed25519
+
+    - |
+      echo -e "Host *\n\tStrictHostKeyChecking no\n\tUserKnownHostsFile=/dev/null\n\n" > ~/.ssh/config
+      chmod 600 ~/.ssh/config
+
+    - composer require deployer/deployer --dev
+
+    - php vendor/bin/dep deploy -vvv
+  after_script:
+    - rm -f ~/.ssh/id_ed25519
+  environment:
+    name: development
+    url: http://dev.fenixdrive.com
+
+include:
+  - template: Security/Dependency-Scanning.gitlab-ci.yml
+  - template: Security/SAST.gitlab-ci.yml
+  - template: Security/Secret-Detection.gitlab-ci.yml

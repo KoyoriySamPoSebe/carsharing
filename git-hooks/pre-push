@@ -1,0 +1,14 @@
+#!/bin/sh
+
+# Run PHP-CS-Fixer
+composer codestyle
+
+# Check if PHP-CS-Fixer found issues
+if [ $? -ne 0 ]; then
+    echo "PHP-CS-Fixer found coding standard violations."
+    echo "Please fix the issues and commit your changes before pushing."
+    exit 1
+fi
+
+# Allow push if no issues
+exit 0
