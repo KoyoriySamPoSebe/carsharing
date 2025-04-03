@@ -1,5 +1,7 @@
-<div>
-    <div class="card">
+<div class="card card-primary card-outline">
+    <div class="card-header">
+        <h3 class="card-title">Drivers</h3>
+    </div>
         <div class="card-body table-responsive p-0">
             <table class="table table-hover text-nowrap">
                 <thead>
@@ -37,4 +39,4 @@
             {{ $drivers->links() }}
         </div>
     </div>
-</div>
+
