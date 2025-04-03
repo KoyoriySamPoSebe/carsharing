@@ -317,6 +317,12 @@ return [
             'url'  => '/rents',
             'icon' => 'file',
         ],
+        ['header' => 'DRIVERS'],
+        [
+            'text' => 'Drivers',
+            'url'  => '/drivers',
+            'icon' => 'file',
+        ],
     ],
 
     /*

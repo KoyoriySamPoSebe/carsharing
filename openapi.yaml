@@ -8,11 +8,8 @@ info:
     email: resident14101991@gmail.com
 
 servers:
-  #  - url: https://api.example.com/v1
-  - url: http://localhost/api
-    description: Production server
-  - url: https://staging.example.com/v1
-    description: Staging server
+  - url: http://127.0.0.1:8080/api
+    description: Local development server
 
 paths:
   /v1/rent/create:
