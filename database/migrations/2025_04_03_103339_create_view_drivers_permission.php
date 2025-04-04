@@ -26,6 +26,16 @@ return new class () extends Migration {
      */
     public function down(): void
     {
-        Permission::where('name', 'view_drivers')->delete();
+        $permission = Permission::where(['name' => 'view_drivers'])->first();
+
+        if ($permission) {
+            $roles = Role::whereIn('name', ['super-admin', 'admin', 'support'])->get();
+
+            foreach ($roles as $role) {
+                $role->revokePermissionTo($permission);
+            }
+
+            $permission->delete();
+        }
     }
 };
